@@ -1,56 +1,39 @@
 module HashMap
 
 import Data.Vect
+import Data.Fin
 import Utils.Hashable
 
 %default total
 
-
--- data HashMap : a -> Type where
-  -- MkHashMap : (Hashable a) => (size: Nat) -> (capacity: Nat) -> (slots: Vect capacity (Maybe a)) -> HashMap a 
-
 record HashMap a where
   constructor MkHashMap
-  capacity : Nat
-  size : Fin (S capacity)
-  slots : Vect capacity (Maybe a)
+  capacity: Nat
+  size: Nat
+  slots: Vect size (Maybe a)
 
 %name HashMap hm
 
-emptyHashMap: (Hashable a) => (capacity: Nat) -> HashMap a
-emptyHashMap capacity = MkHashMap capacity FZ (replicate capacity Nothing)
+emptyHashMap : (Hashable a) => Nat -> HashMap a
+emptyHashMap k = MkHashMap Z k (replicate k Nothing)
 
-get_idx: (Hashable a) => a -> (capacity: Nat) -> Fin capacity
-get_idx x Z = ?todo
-get_idx x capacity@(S k) = case natToFin (modNatNZ (hash x) capacity SIsNonZero) capacity of
-                       Nothing => FZ
-                       Just a => a
+get_idx : (Hashable a) => a -> Nat -> Nat
+get_idx x Z = Z
+get_idx x (S k) = (hash x) `mod` (S k) 
 
-
-isLast: Fin (S n) -> Bool
-isLast FZ = False
-isLast (FS FZ) = True
-isLast (FS (FS k)) = isLast (FS k)
-
-finSElseZ: Fin n -> Fin n 
-finSElseZ Fin k = case k == n of 
-                       True => FZ 
-                       False => finS x
-
-                  
-
-||| Get index and map to insert and return Just a if the item is inserted and Nothing else
-public export
-insert: (Hashable a) => a -> (map: HashMap a) -> HashMap a
-insert x hm@(MkHashMap capacity size slots) = 
-  let idx = get_idx x capacity in 
-      insert_at_idx idx where
-        insert_at_idx: Fin capacity -> HashMap a
-        insert_at_idx idx' = 
-          case index idx' slots of 
-               Nothing => let new_slots = replaceAt idx' (Just x) slots in 
-                              MkHashMap capacity size new_slots
-               Just a => insert_at_idx (finS idx')
+const_range : (size: Nat) -> Vect size (Fin size)
+const_range size = Data.Vect.Fin.range {len = size} 
 
 
-                 
+insert : (Hashable a) => a -> HashMap a -> Maybe (HashMap a)
+insert x (MkHashMap capacity (S size) slots) = 
+  case isLT (S capacity) size of
+    (No contra) => Nothing
+    (Yes prf) => let idx = get_idx x size in 
+                     let new_slots = try_insert (?get_iteration_indeciess idx) in 
+                         ?huemoe where 
+                       get_iteration_indecies : Nat -> Vect size (Fin size) 
+                       get_iteration_indecies k = 
+                        let (before, after) = splitAt k (const_range (S size)) in ?df
+
+                       try_insert: Vect size (Fin size) -> Maybe (Vect size (Maybe a))

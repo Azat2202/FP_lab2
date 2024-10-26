@@ -10,4 +10,7 @@ public export
 Hashable Int where
   hash a = cast a
 
+public export
+Hashable Integer where
+  hash a = cast a
 
