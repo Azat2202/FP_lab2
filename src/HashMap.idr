@@ -46,5 +46,21 @@ insert item (MkHashMap capacity size slots) =
                             Empty => Just $ MkHashMap (S capacity) size (replaceAt x (Just item 1) slots)
                             (Just entry count) => case entry == item of
                                                     False => go xs 
-                                                    True => Just $ MkHashMap (S capacity) size (replaceAt x (Just item (S count)) slots)
+                                                    True => Just $ MkHashMap capacity size (replaceAt x (Just item (S count)) slots)
+
+delete : (Hashable a) => a -> HashMap a -> Maybe (HashMap a)
+delete _ (MkHashMap Z _ _) = Nothing
+delete item (MkHashMap capacity@(S capS) size slots) = 
+  let idx = get_idx item size in 
+      go (get_iteration_indexes size idx) where
+        go : List (Fin size) -> Maybe (HashMap a)
+        go [] = Nothing
+        go (x :: xs) = case index x slots of
+                            Empty => Nothing
+                            (Just entry Z) => Just $ MkHashMap capacity size (replaceAt x Empty slots)
+                            (Just entry (S count)) => if entry /= item then go xs else
+                                                      if count == Z 
+                                                         then Just $ MkHashMap capS size (replaceAt x Empty slots)
+                                                         else Just $ MkHashMap capacity size (replaceAt x (Just entry count) slots)
+
 
