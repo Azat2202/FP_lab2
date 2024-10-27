@@ -68,4 +68,41 @@ filter f (MkHashMap size slots) = case filter filter_entry slots of
                                             filter_entry Empty = False
                                             filter_entry entry@(Just x k) = f x 
 
+Functor HashMap where 
+  map f (MkHashMap size slots) = MkHashMap size (map f_entry slots) 
+                                  where 
+                                    f_entry : (Entry a -> Entry b)
+                                    f_entry Empty = Empty
+                                    f_entry (Just x k) = Just (f x) k
+namespace Foldr
+  repeat : (t -> acc -> acc) -> (acc -> acc) -> Entry t -> (acc -> acc)
+  repeat f go Empty          = go
+  repeat f go (Just x 0    ) = go
+  repeat f go (Just x (S k)) = assert_total $ repeat f (go . (f x)) (Just x k)
+  
+  export
+  foldrImpl : (t -> acc -> acc) -> acc -> (acc -> acc) -> HashMap t -> acc
+  foldrImpl f e go (MkHashMap 0       []     ) = go e
+  foldrImpl f e go (MkHashMap (S len) (x::xs)) = assert_total $ foldrImpl f e (go . (repeat f id x)) (MkHashMap len xs)
 
+namespace Foldl
+  repeat : (a -> acc -> acc) -> acc -> Entry a -> acc
+  repeat f acc Empty          = acc
+  repeat f acc (Just y 0    ) = acc
+  repeat f acc (Just y (S k)) = assert_total $ repeat f (f y acc) (Just y k)
+
+  export
+  foldlImpl : (a -> acc -> acc) -> acc -> HashMap a -> acc
+  foldlImpl f x (MkHashMap 0       []       ) = x
+  foldlImpl f x (MkHashMap (S len) (y :: xs)) = assert_total $ foldlImpl f (repeat f x y) (MkHashMap len xs)
+
+Foldable HashMap where 
+  foldr f acc hm = Foldr.foldrImpl f acc id hm
+  foldr f acc hm = Foldl.foldlImpl f acc hm 
+
+Show a => Show (Entry a) where
+  show Empty = "Empty"
+  show (Just x k) = "(" ++ (show x) ++ ")x" ++ (show k) 
+
+Show a => Show (HashMap a) where
+  show (MkHashMap size slots) = "HashMap, size: " ++ (show size) ++ "elements: " ++ (show slots)
