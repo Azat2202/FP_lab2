@@ -1,6 +1,7 @@
 module HashMap
 
 import Data.List
+import Data.Vect
 import Data.Fin
 import Utils.Hashable
 
@@ -10,7 +11,7 @@ record HashMap a where
   constructor MkHashMap
   capacity: Nat
   size: Nat
-  slots: List (Maybe a)
+  slots: Vect size (Maybe a)
 
 %name HashMap hm
 
@@ -34,10 +35,10 @@ insert item (MkHashMap capacity size slots) =
   case isLT capacity size of
     (No contra) => Nothing
     (Yes prf) => let idx = get_idx item size 
-      in go (get_iteration_indexes (length slots) idx) where
-        go : List (Fin (length slots)) -> Maybe (HashMap a)
+      in go (get_iteration_indexes size idx) where
+        go : List (Fin size) -> Maybe (HashMap a)
         go [] = Nothing
-        go (x :: xs) = case index' slots x of
+        go (x :: xs) = case index x slots of
                             (Just y) => go xs
                             Nothing => Just $ MkHashMap (S capacity) size (replaceAt x (Just item) slots)
 
