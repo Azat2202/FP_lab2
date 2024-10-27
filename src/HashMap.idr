@@ -7,16 +7,20 @@ import Utils.Hashable
 
 %default total
 
+data Entry a = Empty 
+             | Just a Nat 
+
 record HashMap a where
   constructor MkHashMap
   capacity: Nat
   size: Nat
-  slots: Vect size (Maybe a)
+  slots: Vect size (Entry a)
 
+%name Entry en
 %name HashMap hm
 
 emptyHashMap : (Hashable a) => Nat -> HashMap a
-emptyHashMap k = MkHashMap Z k (replicate k Nothing)
+emptyHashMap k = MkHashMap Z k (replicate k Empty)
 
 get_idx : (Hashable a) => a -> Nat -> Nat
 get_idx x Z = Z
@@ -39,7 +43,8 @@ insert item (MkHashMap capacity size slots) =
         go : List (Fin size) -> Maybe (HashMap a)
         go [] = Nothing
         go (x :: xs) = case index x slots of
-                            (Just y) => go xs
-                            Nothing => Just $ MkHashMap (S capacity) size (replaceAt x (Just item) slots)
-
+                            Empty => Just $ MkHashMap (S capacity) size (replaceAt x (Just item 1) slots)
+                            (Just entry count) => case entry == item of
+                                                    False => go xs 
+                                                    True => Just $ MkHashMap (S capacity) size (replaceAt x (Just item (S count)) slots)
 

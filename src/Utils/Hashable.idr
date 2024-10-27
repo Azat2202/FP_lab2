@@ -3,7 +3,7 @@ module Utils.Hashable
 %default total
 
 public export
-interface Hashable a where
+interface Eq a => Hashable a where
   hash: a -> Nat
 
 public export 
