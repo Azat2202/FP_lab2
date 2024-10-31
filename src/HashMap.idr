@@ -33,17 +33,33 @@ replaceAt _      y []      = []
 replaceAt FZ     y (x::xs) = y :: xs
 replaceAt (FS k) y (x::xs) = x :: replaceAt k y xs
 
-insert : (Hashable a) => a -> HashMap a -> Maybe (HashMap a)
-insert item (MkHashMap size slots) = 
-   let idx = get_idx item size 
-     in go (get_iteration_indexes size idx) where
-        go : List (Fin size) -> Maybe (HashMap a)
-        go [] = Nothing
-        go (x :: xs) = case index x slots of
-                            Empty => Just $ MkHashMap size (replaceAt x (Just item 1) slots)
-                            (Just entry count) => case entry == item of
-                                                    False => go xs 
-                                                    True  => Just $ MkHashMap size (replaceAt x (Just item (S count)) slots)
+mutual
+  insert : (Hashable a) => a -> HashMap a -> HashMap a
+  insert item hm@(MkHashMap size slots) = 
+    let idx = get_idx item size 
+       in go (get_iteration_indexes size idx) where
+          go : List (Fin size) -> HashMap a
+          -- We can assert_total because if we expand hashmap there will be one more Empty slot
+          go [] = assert_total $ insert item (expand hm)
+          go (x :: xs) = case index x slots of
+                              Empty => MkHashMap size (replaceAt x (Just item 1) slots)
+                              (Just entry count) => case entry == item of
+                                                      False => go xs 
+                                                      True  => MkHashMap size (replaceAt x (Just item (S count)) slots)
+
+  insert_all : (Hashable a) => Vect size (Entry a) -> HashMap a -> HashMap a
+  insert_all [] hm = hm
+  insert_all (Empty :: xs) hm = insert_all xs hm
+  insert_all ((Just x 0) :: xs) hm = insert_all xs hm
+  insert_all prev_slots@((Just x (S k)) :: xs) hm = 
+    insert_all (assert_smaller prev_slots (((Just x k)) :: xs)) (insert x hm)
+
+  insert_all_values : (Hashable a) => Vect size a -> HashMap a -> HashMap a
+  insert_all_values xs hm = insert_all (map (\e => Just e 1) xs) hm
+
+  expand : (Hashable a) => HashMap a -> HashMap a
+  expand {a} hm@(MkHashMap size slots) = let new_hm = emptyHashMap (size * 2) {a=a} in 
+                                         insert_all slots new_hm
 
 delete : (Hashable a) => a -> HashMap a -> Maybe (HashMap a)
 delete _    (MkHashMap Z    _    ) = Nothing
@@ -67,6 +83,35 @@ filter f (MkHashMap size slots) = case filter filter_entry slots of
                                             filter_entry : (Entry a -> Bool)
                                             filter_entry Empty = False
                                             filter_entry entry@(Just x k) = f x 
+
+merge : (Hashable a) => HashMap a -> HashMap a -> HashMap a
+merge (MkHashMap size1 slots1) (MkHashMap size2 slots2) = 
+  let new_hm = emptyHashMap (size1 + size2) in 
+      insert_all slots1 (insert_all slots2 new_hm)
+
+(Hashable a) => Semigroup (HashMap a) where 
+  (<+>) = merge 
+
+(Hashable a) => Monoid (HashMap a) where 
+  neutral = MkHashMap 0 []
+
+
+entry_eq : Eq a => Entry a -> Entry a -> Bool
+entry_eq Empty Empty = True
+entry_eq Empty (Just x k) = False
+entry_eq (Just x k) Empty = False
+entry_eq (Just x k) (Just y j) = x == y && k == j
+
+Eq a => Eq (Entry a) where 
+  (==) = entry_eq
+
+hashmap_equals : HashMap Int -> HashMap Int -> Bool
+hashmap_equals (MkHashMap size1 slots1) (MkHashMap size2 slots2) = case cmp size1 size2 of
+                                                                        CmpEQ => slots1 == slots2
+                                                                        _ => False
+
+Eq (HashMap Int) where 
+  (==) = hashmap_equals
 
 Functor HashMap where 
   map f (MkHashMap size slots) = MkHashMap size (map f_entry slots) 
