@@ -18,9 +18,3 @@ public export
 Hashable String where 
   hash a = integerToNat $ cast $ sum $ map ord (unpack a)
 
-
-h: Nat -> Nat
-h 0 = 0
-h (S k) = case k of
-               0 => ?h_rhs_2
-               (S j) => ?h_rhs_3

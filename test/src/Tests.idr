@@ -71,9 +71,30 @@ public export
 filter_test : Test es
 filter_test = MkTest "filter test" $ do 
   assert ((filter (\e => e >= 2) gen_hm) == 
-    MkHashMap _ [(Just 2 1), (Just 3 1)]) "should be equal"
+    MkHashMap _ [Empty, Empty, (Just 2 1), (Just 3 1)]) "should be equal"
 
 public export 
 map_test : Test es
 map_test = MkTest "map test" $ do 
-  assert (map (\e => e * 2) gen_hm) == ?rehashing
+  assert ((map (\e => e * 2) gen_hm) == 
+    MkHashMap _ [Empty, (Just 2 1), (Just 4 1), (Just 6 1)]) "should be equal"
+
+public export
+map_with_hash_test : Test es 
+map_with_hash_test = MkTest "map with hash test" $ do 
+  assert ((map_hash (\e => e * 2) gen_hm) == 
+    MkHashMap _ [(Just 4 1), Empty, (Just 2 1), (Just 6 1)]) "should be equal"
+
+public export
+foldr_impl_test: Test es 
+foldr_impl_test = MkTest "foldr test" $ do 
+  assert ((foldr (+) 0 gen_hm) == 6) "should be equal"
+
+public export
+foldl_impl_test: Test es 
+foldl_impl_test = MkTest "foldl test" $ do 
+  assert ((foldl (+) 0 gen_hm) == 6) "should be equal"
+
+
+
+

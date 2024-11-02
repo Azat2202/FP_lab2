@@ -15,6 +15,11 @@ tests = [ empty_hm_k
         , insert_shrink
         , delete_found
         , delete_not_found
+        , filter_test
+        , map_test
+        , map_with_hash_test
+        , foldr_impl_test
+        , foldl_impl_test
         ]
 
 main : IO ()

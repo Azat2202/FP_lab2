@@ -86,12 +86,10 @@ delete item (MkHashMap size slots) =
 
 public export
 filter : (Hashable a) => (a -> Bool) -> HashMap a -> HashMap a
-filter f (MkHashMap size slots) = case filter filter_entry slots of
-                                          ((len ** new_slots)) => MkHashMap len new_slots
-                                          where 
-                                            filter_entry : (Entry a -> Bool)
-                                            filter_entry Empty = False
-                                            filter_entry entry@(Just x k) = f x 
+filter f (MkHashMap size slots) = MkHashMap size (map apply_filter slots) where 
+                                              apply_filter : Entry a -> Entry a
+                                              apply_filter Empty = Empty
+                                              apply_filter v@(Just x k) = if (f x) then v else Empty
 
 public export
 merge : (Hashable a) => HashMap a -> HashMap a -> HashMap a
@@ -127,13 +125,24 @@ public export
   (==) = hashmap_equals
 
 
+||| WARNING IT WILL DESTROY HASHING
 public export 
 Functor HashMap where 
-  map f (MkHashMap size slots) = ?ainsert_all (map f_entry slots) (?aemptyHashMap size)
+  map f (MkHashMap size slots) = MkHashMap size (map f_entry slots)
                                   where 
                                     f_entry : (Entry a -> Entry b)
                                     f_entry Empty = Empty
                                     f_entry (Just x k) = Just (f x) k
+
+map' : (Hashable a) => (Hashable b) => (f: a -> b) -> Vect size (Entry a) -> Vect size (Entry b)
+map' f [] = []
+map' f (Empty :: xs) = Empty :: (map' f xs)
+map' f ((Just x k) :: xs) = (Just (f x) k) :: (map' f xs)
+
+public export
+map_hash : (Hashable a) => (Hashable b) => (f: a -> b) -> HashMap a -> HashMap b
+map_hash f (MkHashMap size slots) = insert_all (map' f slots) (emptyHashMap size)
+
 namespace Foldr
   repeat : (t -> acc -> acc) -> (acc -> acc) -> Entry t -> (acc -> acc)
   repeat f go Empty          = go
