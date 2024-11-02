@@ -4,8 +4,8 @@ authors = "Azat222"
 modules = HashMap
         , Utils.Hashable
 
--- main file (i.e. file to load at REPL)
--- main =
+--main file (i.e. file to load at REPL)
+main = HashMap
 
 -- name of executable
 -- executable =

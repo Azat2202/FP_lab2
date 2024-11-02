@@ -1,4 +1,4 @@
-package FP_lab2-test
+package FP_lab2_test
 version = 0.1.0
 authors = "Azat222"
 -- maintainers =
@@ -13,10 +13,12 @@ authors = "Azat222"
 -- langversion
 
 -- packages to add to search path
-depends = FP_lab2
+depends = FP_lab2 
+        , hedgehog
 
 -- modules to install
--- modules =
+modules = Main
+        , Utils.Unit
 
 -- main file (i.e. file to load at REPL)
 main = Main
