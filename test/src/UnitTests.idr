@@ -1,4 +1,4 @@
-module Tests 
+module UnitTests 
 import Control.App
 import Utils.Unit
 import Data.Vect
@@ -68,16 +68,26 @@ delete_not_found = MkTest "delete not found value" $ do
   assert ((delete 0 gen_hm) == Nothing) "should be equal"
 
 public export 
+find_found_at_first_idx : Test es 
+find_found_at_first_idx = MkTest "find found at first hash" $ do 
+  assert ((find 1 gen_hm) == (Just $ Just 1 1)) "should be equal"
+
+public export 
+find_found_at_second_idx : Test es 
+find_found_at_second_idx = MkTest "find found at second hash" $ do 
+  assert ((find 5 (insert_all_values [1, 2, 3, 5] (emptyHashMap 4))) == 
+    (Just $ Just 5 1)) "should be equal"
+
+public export
+find_not_found : Test es 
+find_not_found = MkTest "find not found" $ do 
+  assert ((find 0 gen_hm) == Nothing) "should be equal"
+
+public export 
 filter_test : Test es
 filter_test = MkTest "filter test" $ do 
   assert ((filter (\e => e >= 2) gen_hm) == 
     MkHashMap _ [Empty, Empty, (Just 2 1), (Just 3 1)]) "should be equal"
-
-public export 
-map_test : Test es
-map_test = MkTest "map test" $ do 
-  assert ((map (\e => e * 2) gen_hm) == 
-    MkHashMap _ [Empty, (Just 2 1), (Just 4 1), (Just 6 1)]) "should be equal"
 
 public export
 map_with_hash_test : Test es 

@@ -11,6 +11,20 @@ public export
 data Entry a = Empty 
              | Just a Nat 
 
+entry_eq : Eq a => Entry a -> Entry a -> Bool
+entry_eq Empty Empty = True
+entry_eq Empty (Just x k) = False
+entry_eq (Just x k) Empty = False
+entry_eq (Just x k) (Just y j) = x == y && k == j
+
+public export
+Eq a => Eq (Entry a) where 
+  (==) = entry_eq
+
+(Hashable a) => Hashable (Entry a) where
+  hash Empty = 0
+  hash (Just x k) = hash x
+
 public export
 record HashMap a where
   constructor MkHashMap
@@ -84,6 +98,19 @@ delete item (MkHashMap size slots) =
                                                          then Just $ MkHashMap size (replaceAt x Empty slots)
                                                          else Just $ MkHashMap size (replaceAt x (Just entry count) slots)
 
+public export 
+find : (Hashable a) => a -> HashMap a -> Maybe (Entry a)
+find item hm@(MkHashMap size slots) = 
+  let idx = get_idx item size in 
+      go (get_iteration_indexes size idx) where 
+        go : (List (Fin size)) -> Maybe (Entry a)
+        go [] = Nothing
+        go (x :: xs) = case index x slots of
+                            Empty => Nothing
+                            en@(Just entry count) => if entry == item 
+                                                        then Just $ en 
+                                                        else go xs
+
 public export
 filter : (Hashable a) => (a -> Bool) -> HashMap a -> HashMap a
 filter f (MkHashMap size slots) = MkHashMap size (map apply_filter slots) where 
@@ -95,7 +122,7 @@ public export
 merge : (Hashable a) => HashMap a -> HashMap a -> HashMap a
 merge (MkHashMap size1 slots1) (MkHashMap size2 slots2) = 
   let new_hm = emptyHashMap (size1 + size2) in 
-      insert_all slots1 (insert_all slots2 new_hm)
+      insert_all slots2 (insert_all slots1 new_hm)
 
 public export
 (Hashable a) => Semigroup (HashMap a) where 
@@ -105,34 +132,31 @@ public export
 (Hashable a) => Monoid (HashMap a) where 
   neutral = MkHashMap 0 []
 
-
-entry_eq : Eq a => Entry a -> Entry a -> Bool
-entry_eq Empty Empty = True
-entry_eq Empty (Just x k) = False
-entry_eq (Just x k) Empty = False
-entry_eq (Just x k) (Just y j) = x == y && k == j
-
 public export
-Eq a => Eq (Entry a) where 
-  (==) = entry_eq
-
 hashmap_equals : (Hashable a) => HashMap a -> HashMap a -> Bool
-hashmap_equals (MkHashMap size1 slots1) (MkHashMap size2 slots2) = case cmp size1 size2 of
-                                                                        CmpEQ => slots1 == slots2
-                                                                        _ => False
+hashmap_equals hm1@(MkHashMap size1 slots1) hm2@(MkHashMap size2 slots2) = 
+  cmp_each hm1 where 
+       cmp_each : (HashMap a) -> Bool
+       cmp_each (MkHashMap 0 []) = True
+       cmp_each (MkHashMap (S len) (Empty :: xs)) = assert_total $ cmp_each (MkHashMap len xs)
+       cmp_each (MkHashMap (S len) (el@(Just x k) :: xs)) = if (find x hm2) == Just el 
+                                                               then assert_total $ cmp_each (MkHashMap len xs)
+                                                               else False
+
+
 public export
 (Hashable a) => (Eq a) => Eq (HashMap a) where 
   (==) = hashmap_equals
 
 
 ||| WARNING IT WILL DESTROY HASHING
-public export 
-Functor HashMap where 
-  map f (MkHashMap size slots) = MkHashMap size (map f_entry slots)
-                                  where 
-                                    f_entry : (Entry a -> Entry b)
-                                    f_entry Empty = Empty
-                                    f_entry (Just x k) = Just (f x) k
+-- public export 
+-- Functor HashMap where 
+--  map f (MkHashMap size slots) = MkHashMap size (map f_entry slots)
+--                                  where 
+--                                    f_entry : (Entry a -> Entry b)
+--                                    f_entry Empty = Empty
+--                                    f_entry (Just x k) = Just (f x) k
 
 map' : (Hashable a) => (Hashable b) => (f: a -> b) -> Vect size (Entry a) -> Vect size (Entry b)
 map' f [] = []
