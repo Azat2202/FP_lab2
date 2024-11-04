@@ -54,13 +54,19 @@ insert_shrink = MkTest "insert with shrinking" $ do
 
 
 gen_hm : HashMap Int 
-gen_hm = insert_all_values [1, 2, 3] (emptyHashMap 4)
+gen_hm = insert_all_values [1, 1, 2, 3] (emptyHashMap 4)
 
 public export 
 delete_found : Test es
-delete_found = MkTest "delete found value" $ do 
+delete_found = MkTest "delete found repeated value" $ do 
   assert ((delete 1 gen_hm) == 
-    Just (MkHashMap _ [Empty, Empty, (Just 2 1), (Just 3 1)])) "should be equal"
+    Just (MkHashMap _ [Empty, (Just 1 1), (Just 2 1), (Just 3 1)])) "should be equal"
+
+public export 
+delete_found_not_repeated : Test es
+delete_found_not_repeated = MkTest "delete found not repeated value" $ do 
+  assert ((delete 2 gen_hm) == 
+    Just (MkHashMap _ [Empty, (Just 1 2), Empty, (Just 3 1)])) "should be equal"
 
 public export 
 delete_not_found : Test es
@@ -70,7 +76,7 @@ delete_not_found = MkTest "delete not found value" $ do
 public export 
 find_found_at_first_idx : Test es 
 find_found_at_first_idx = MkTest "find found at first hash" $ do 
-  assert ((find 1 gen_hm) == (Just $ Just 1 1)) "should be equal"
+  assert ((find 1 gen_hm) == (Just $ Just 1 2)) "should be equal"
 
 public export 
 find_found_at_second_idx : Test es 
@@ -93,17 +99,17 @@ public export
 map_with_hash_test : Test es 
 map_with_hash_test = MkTest "map with hash test" $ do 
   assert ((map_hash (\e => e * 2) gen_hm) == 
-    MkHashMap _ [(Just 4 1), Empty, (Just 2 1), (Just 6 1)]) "should be equal"
+    MkHashMap _ [(Just 4 1), Empty, (Just 2 2), (Just 6 1)]) "should be equal"
 
 public export
 foldr_impl_test: Test es 
 foldr_impl_test = MkTest "foldr test" $ do 
-  assert ((foldr (+) 0 gen_hm) == 6) "should be equal"
+  assert ((foldr (+) 0 gen_hm) == 7) "should be equal"
 
 public export
 foldl_impl_test: Test es 
 foldl_impl_test = MkTest "foldl test" $ do 
-  assert ((foldl (+) 0 gen_hm) == 6) "should be equal"
+  assert ((foldl (+) 0 gen_hm) == 7) "should be equal"
 
 
 
