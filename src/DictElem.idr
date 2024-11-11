@@ -61,10 +61,10 @@ getValue k (y :: xs) {prf = (There later)} = getValue k xs
 
 
 public export 
-readValue : (Show a) => (line : String) -> (xs : Vect size (DictEntry a)) -> String
+readValue : (line : String) -> (xs : Vect size (DictEntry String)) -> String
 readValue line xs = case parsePositive line {a=Nat} of  
                               Nothing => "Please write positive number!"
                               (Just k) => case isDictElem k xs of
-                                               (Yes prf) => show $ getValue k xs 
+                                               (Yes prf) => getValue k xs 
                                                (No contra) => "Element with that key dont exists!"
 

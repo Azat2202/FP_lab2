@@ -5,6 +5,7 @@ import Control.App
 import Utils.Unit
 import UnitTests
 import PropertyTests
+import DictElemUnitTests
 import Data.Vect
 
 unit_tests : List (Utils.Unit.Test es)
@@ -25,6 +26,10 @@ unit_tests = [ empty_hm_k
         , map_with_hash_test
         , foldr_impl_test
         , foldl_impl_test
+        , numberIsNotValid
+        , numberFoundAtFirstPos
+        , numberFound 
+        , numberNotFound
         ]
 
 

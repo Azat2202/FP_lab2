@@ -3,6 +3,7 @@ version = 0.1.0
 authors = "Azat222"
 modules = HashMap
         , Utils.Hashable
+        , DictElem
 
 --main file (i.e. file to load at REPL)
 main = HashMap
