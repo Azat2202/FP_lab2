@@ -3,6 +3,7 @@ module DictElem
 import Data.Vect
 import Data.String
 import Decidable.Equality
+import System.File.ReadWrite
 
 %default total 
 
@@ -68,3 +69,10 @@ readValue line xs = case parsePositive line {a=Nat} of
                                                (Yes prf) => getValue k xs 
                                                (No contra) => "Element with that key dont exists!"
 
+public export 
+partial
+main : IO ()
+main = do file <- readFile "../test.txt"
+          case file of
+               (Left x) => printLn x
+               (Right x) => printLn $ "Found element is: " ++ readValue (trim x) sampleDict
